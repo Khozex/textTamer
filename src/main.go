@@ -41,22 +41,34 @@ func readToFile(path string) string {
 	return strings.Join(text, " ")
 }
 
-func parseWordToBold(text string) string {
+func parseWordToBoldMd(text string) string {
 	wordLength := len(text)
 	halfWordLength := wordLength / 2
 	wordBold := "**" + text[:halfWordLength] + "**" + text[halfWordLength:]
 	return wordBold
 }
 
+func parseWordToBoldHtml(text string) string {
+	wordLength := len(text)
+	halfWordLength := wordLength / 2
+	wordBold := "<b>" + text[:halfWordLength] + "</b>" + text[halfWordLength:]
+	return wordBold
+}
+
 func main() {
 	var filePathFlag = flag.String("f", "", "path to file")
+	var formatFlag = flag.String("t", "md", "format of output text")
 	flag.Parse()
+	var parser = parseWordToBoldMd
+	if *formatFlag == "html" {
+		parser = parseWordToBoldHtml
+	}
 	if *filePathFlag != "" {
 		text := readToFile(*filePathFlag)
 		words := breakTextIntoWords(text)
 		var bionicWords []string
 		for _, word := range words {
-			bionicWords = append(bionicWords, parseWordToBold(word))
+			bionicWords = append(bionicWords, parser(word))
 		}
 		fmt.Print(bionicWords)
 		return
@@ -66,7 +78,7 @@ func main() {
 	words := breakTextIntoWords(text)
 	var bionicWords []string
 	for _, word := range words {
-		bionicWords = append(bionicWords, parseWordToBold(word))
+		bionicWords = append(bionicWords, parser(word))
 	}
 	fmt.Print(bionicWords)
 }

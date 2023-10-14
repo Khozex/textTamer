@@ -20,7 +20,7 @@ Bionic Reading is a revolutionary approach that enhances the reading experience 
 
 ## Getting Started
 
-To get started with cacheCraft, follow these steps:
+To get started with textTammer, follow these steps:
 
 1. Clone the repository to your local machine.
 
