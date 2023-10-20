@@ -2,83 +2,46 @@ package main
 
 import (
 	"bufio"
-	"flag"
 	"fmt"
 	"os"
-	"path/filepath"
 	"strings"
 )
 
-func breakTextIntoWords(text string) []string {
+func makeTextToBold(text string, args BoldArgs) string {
+	runes := []rune(text)
 	var words []string
 	var word string
-	for _, char := range text {
-		if string(char) == " " {
-			words = append(words, word)
+	var count int
+	for _, runeChar := range runes {
+		count++
+		runeIdentify := identifyRuneByType(runeChar)
+		if runeIdentify.typeChar == "string" {
+			word += runeIdentify.char
+			if count == len(runes) {
+				words = append(words, parseWordToBold(word, args))
+			}
+		} else if runeIdentify.typeChar == "space" {
+			words = append(words, parseWordToBold(word, args))
+			words = append(words, runeIdentify.char)
 			word = ""
 		} else {
-			word += string(char)
+			words = append(words, parseWordToBold(word, args)+runeIdentify.char)
+			word = ""
 		}
 	}
-	words = append(words, word)
-	return words
-}
-
-func readToFile(path string) string {
-	absPath, _ := filepath.Abs(path)
-	file, err := os.Open(absPath)
-	if err != nil {
-		fmt.Println("Error reading file")
-	}
-	defer file.Close()
-
-	scanner := bufio.NewScanner(file)
-	scanner.Split(bufio.ScanLines)
-	var text []string
-	for scanner.Scan() {
-		text = append(text, scanner.Text())
-	}
-	return strings.Join(text, " ")
-}
-
-func parseWordToBoldMd(text string) string {
-	wordLength := len(text)
-	halfWordLength := wordLength / 2
-	wordBold := "**" + text[:halfWordLength] + "**" + text[halfWordLength:]
-	return wordBold
-}
-
-func parseWordToBoldHtml(text string) string {
-	wordLength := len(text)
-	halfWordLength := wordLength / 2
-	wordBold := "<b>" + text[:halfWordLength] + "</b>" + text[halfWordLength:]
-	return wordBold
+	fmt.Println(strings.Join(words, ""))
+	return strings.Join(words, "")
 }
 
 func main() {
-	var filePathFlag = flag.String("f", "", "path to file")
-	var formatFlag = flag.String("t", "md", "format of output text")
-	flag.Parse()
-	var parser = parseWordToBoldMd
-	if *formatFlag == "html" {
-		parser = parseWordToBoldHtml
+	var stdinWord string
+	scanner := bufio.NewScanner(os.Stdin)
+	for scanner.Scan() {
+		stdinWord += scanner.Text()
 	}
-	if *filePathFlag != "" {
-		text := readToFile(*filePathFlag)
-		words := breakTextIntoWords(text)
-		var bionicWords []string
-		for _, word := range words {
-			bionicWords = append(bionicWords, parser(word))
-		}
-		fmt.Print(bionicWords)
-		return
+	args := BoldArgs{
+		typeBold: "md",
+		porcent:  50,
 	}
-	reader := bufio.NewReader(os.Stdin)
-	text, _ := reader.ReadString('\n')
-	words := breakTextIntoWords(text)
-	var bionicWords []string
-	for _, word := range words {
-		bionicWords = append(bionicWords, parser(word))
-	}
-	fmt.Print(bionicWords)
+	makeTextToBold(stdinWord, args)
 }
