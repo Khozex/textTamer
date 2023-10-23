@@ -2,7 +2,6 @@ package lib
 
 import (
 	"fmt"
-	"math"
 	"strings"
 	"unicode"
 )
@@ -33,17 +32,13 @@ func categorizeRune(r rune) string {
 
 func parseWordToBold(text string, boldArgs BoldArgs) string {
 	runes := []rune(text)
-	//print word with /n or /t if exist
-	if strings.Contains(text, "\n") || strings.Contains(text, "\t") {
-		return text
-	}
 	wordLength := len(runes)
 
 	if boldArgs.Porcent < 50 {
 		boldArgs.Porcent = 50
 	}
 
-	halfWordLength := int(math.Ceil(float64(wordLength) * (float64(boldArgs.Porcent) / 100.0)))
+	halfWordLength := int(float64(wordLength)*(float64(boldArgs.Porcent)/100.0) + 0.5)
 
 	boldPortion := string(runes[:halfWordLength])
 	remainder := string(runes[halfWordLength:])
