@@ -2,36 +2,9 @@ package main
 
 import (
 	"bufio"
-	"fmt"
 	"os"
-	"strings"
+	"textTamer/lib"
 )
-
-func makeTextToBold(text string, args BoldArgs) string {
-	runes := []rune(text)
-	var words []string
-	var word string
-	var count int
-	for _, runeChar := range runes {
-		count++
-		runeIdentify := identifyRuneByType(runeChar)
-		if runeIdentify.typeChar == "string" {
-			word += runeIdentify.char
-			if count == len(runes) {
-				words = append(words, parseWordToBold(word, args))
-			}
-		} else if runeIdentify.typeChar == "space" {
-			words = append(words, parseWordToBold(word, args))
-			words = append(words, runeIdentify.char)
-			word = ""
-		} else {
-			words = append(words, parseWordToBold(word, args)+runeIdentify.char)
-			word = ""
-		}
-	}
-	fmt.Println(strings.Join(words, ""))
-	return strings.Join(words, "")
-}
 
 func main() {
 	var stdinWord string
@@ -39,9 +12,9 @@ func main() {
 	for scanner.Scan() {
 		stdinWord += scanner.Text()
 	}
-	args := BoldArgs{
-		typeBold: "md",
-		porcent:  50,
+	args := lib.BoldArgs{
+		TypeBold: "md",
+		Porcent:  50,
 	}
-	makeTextToBold(stdinWord, args)
+	lib.MakeTextToBold(stdinWord, args)
 }
