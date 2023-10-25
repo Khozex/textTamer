@@ -16,7 +16,6 @@ func setFlags() {
 
 func main() {
 	setFlags()
-	flag.Parse()
 	var stdinWord string
 	scanner := bufio.NewScanner(os.Stdin)
 	for scanner.Scan() {
