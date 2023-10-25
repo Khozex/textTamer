@@ -15,6 +15,7 @@ func main() {
 	args := lib.BoldArgs{
 		TypeBold: "md",
 		Porcent:  50,
+		Jumps:    0,
 	}
 	lib.MakeTextToBold(stdinWord, args)
 }

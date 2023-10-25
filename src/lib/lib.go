@@ -15,6 +15,7 @@ type Caracter struct {
 type BoldArgs struct {
 	TypeBold string
 	Porcent  int
+	Jumps    int
 }
 
 func categorizeRune(r rune) string {
@@ -61,21 +62,40 @@ func MakeTextToBold(text string, args BoldArgs) string {
 	runes := []rune(text)
 	var words []string
 	var word string
-	var count int
+	var runeCount int
+	jumpCount := args.Jumps
 	for _, runeChar := range runes {
-		count++
+		runeCount++
 		runeIdentify := identifyRuneByType(runeChar)
 		if runeIdentify.typeChar == "string" {
 			word += runeIdentify.char
-			if count == len(runes) {
-				words = append(words, parseWordToBold(word, args))
+			if runeCount == len(runes) {
+				if jumpCount == args.Jumps {
+					words = append(words, parseWordToBold(word, args))
+					jumpCount = 0
+				} else {
+					words = append(words, word)
+					jumpCount++
+				}
 			}
 		} else if runeIdentify.typeChar == "space" && word != "" {
-			words = append(words, parseWordToBold(word, args))
+			if jumpCount == args.Jumps {
+				words = append(words, parseWordToBold(word, args))
+				jumpCount = 0
+			} else {
+				words = append(words, word)
+				jumpCount++
+			}
 			words = append(words, runeIdentify.char)
 			word = ""
 		} else if runeIdentify.typeChar == "symbol" && word != "" {
-			words = append(words, parseWordToBold(word, args)+runeIdentify.char)
+			if jumpCount == args.Jumps {
+				words = append(words, parseWordToBold(word, args)+runeIdentify.char)
+				jumpCount = 0
+			} else {
+				words = append(words, word+runeIdentify.char)
+				jumpCount++
+			}
 			word = ""
 		} else {
 			words = append(words, runeIdentify.char)
