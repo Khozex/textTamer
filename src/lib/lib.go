@@ -14,7 +14,7 @@ type Caracter struct {
 
 type BoldArgs struct {
 	TypeBold string
-	Porcent  int
+	Percent  int
 	Jumps    int
 }
 
@@ -35,11 +35,11 @@ func parseWordToBold(text string, boldArgs BoldArgs) string {
 	runes := []rune(text)
 	wordLength := len(runes)
 
-	if boldArgs.Porcent < 50 {
-		boldArgs.Porcent = 50
+	if boldArgs.Percent < 50 {
+		boldArgs.Percent = 50
 	}
 
-	halfWordLength := int(float64(wordLength)*(float64(boldArgs.Porcent)/100.0) + 0.5)
+	halfWordLength := int(float64(wordLength)*(float64(boldArgs.Percent)/100.0) + 0.5)
 
 	boldPortion := string(runes[:halfWordLength])
 	remainder := string(runes[halfWordLength:])
