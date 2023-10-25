@@ -11,7 +11,7 @@ func TestShouldBoldFiftyPercentOfWordWithPunctuationInMD(t *testing.T) {
 	args := BoldArgs{
 		TypeBold: "md",
 		Porcent:  50,
-		Jumps: 0,
+		Jumps:    0,
 	}
 	boldWord := MakeTextToBold(word, args)
 	assert.Equal(t, boldWord, "**Th**e **su**n **ris**es **i**n **th**e **ea**st.")
@@ -22,7 +22,7 @@ func TestShouldBoldFiftyPercentOfWordInMD(t *testing.T) {
 	args := BoldArgs{
 		TypeBold: "md",
 		Porcent:  50,
-		Jumps: 0,
+		Jumps:    0,
 	}
 	boldWord := MakeTextToBold(word, args)
 	assert.Equal(t, boldWord, "**Th**e **su**n **ris**es **i**n **th**e **ea**st")
@@ -33,7 +33,7 @@ func TestShouldBoldFiftyPercentOfWordInHTML(t *testing.T) {
 	args := BoldArgs{
 		TypeBold: "html",
 		Porcent:  50,
-		Jumps:  0,
+		Jumps:    0,
 	}
 	boldWord := MakeTextToBold(word, args)
 	assert.Equal(t, boldWord, "<b>Th</b>e <b>su</b>n <b>ris</b>es <b>i</b>n <b>th</b>e <b>ea</b>st")
@@ -44,7 +44,7 @@ func TestShouldBoldFiftyPercentOfWordWithPunctuationInHTML(t *testing.T) {
 	args := BoldArgs{
 		TypeBold: "html",
 		Porcent:  50,
-		Jumps:   0,
+		Jumps:    0,
 	}
 	boldWord := MakeTextToBold(word, args)
 	assert.Equal(t, boldWord, "<b>Th</b>e <b>su</b>n <b>ris</b>es <b>i</b>n <b>th</b>e <b>ea</b>st.")
@@ -111,4 +111,15 @@ func TestShouldBoldVariousPercentagesAboveFiftyInMD(t *testing.T) {
 		boldWord := MakeTextToBold(tc.Input, args)
 		assert.Equal(t, tc.Expected, boldWord, "Failed for percentage: %d", porcent)
 	}
+}
+
+func TestShouldBoldFiftyPercentWithJumpWords(t *testing.T) {
+	word := "The sun rises in the east."
+	args := BoldArgs{
+		TypeBold: "md",
+		Porcent:  50,
+		Jumps:    1,
+	}
+	boldWord := MakeTextToBold(word, args)
+	assert.Equal(t, boldWord, "**Th**e sun **ris**es in **th**e east.")
 }
