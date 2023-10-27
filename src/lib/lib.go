@@ -1,7 +1,6 @@
 package lib
 
 import (
-	"fmt"
 	"strings"
 	"unicode"
 )
@@ -101,6 +100,5 @@ func MakeTextToBold(text string, args BoldArgs) string {
 			words = append(words, runeIdentify.char)
 		}
 	}
-	fmt.Println(strings.Join(words, ""))
 	return strings.Join(words, "")
 }
