@@ -3,6 +3,7 @@ package main
 import (
 	"bufio"
 	"flag"
+	"fmt"
 	"os"
 	"textTamer/lib"
 )
@@ -33,12 +34,12 @@ func readInFile(name string) string {
 	scanner := bufio.NewScanner(file)
 	var content string
 	for scanner.Scan() {
-		content += scanner.Text()
+		content += scanner.Text() + "\n"
 	}
 	return content
 }
 
-func getOutputByStdinOrFile() string {
+func getTextInput() string {
 	var content string
 	nonFlagArgs := flag.Args()
 
@@ -47,6 +48,7 @@ func getOutputByStdinOrFile() string {
 		for scanner.Scan() {
 			content += scanner.Text()
 		}
+		fmt.Println(content)
 		return content
 	} else {
 		content = readInFile(nonFlagArgs[0])
@@ -56,7 +58,7 @@ func getOutputByStdinOrFile() string {
 
 func main() {
 	setFlags()
-	stdinWord := getOutputByStdinOrFile()
+	stdinWord := getTextInput()
 	args := lib.BoldArgs{
 		TypeBold: flag.Lookup("t").Value.(flag.Getter).Get().(string),
 		Percent:  flag.Lookup("f").Value.(flag.Getter).Get().(int),
