@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"errors"
 	"flag"
 	"fmt"
 	"io"
@@ -79,6 +80,9 @@ func processStream(r io.Reader, w io.Writer, args lib.BoldArgs) error {
 		}
 	}
 	if err := scanner.Err(); err != nil {
+		if errors.Is(err, bufio.ErrTooLong) {
+			return fmt.Errorf("input line exceeds 10MB; split or stream by chunks")
+		}
 		return err
 	}
 	return bw.Flush()
