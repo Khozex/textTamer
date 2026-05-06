@@ -85,11 +85,9 @@ func MakeTextToBold(text string, args BoldArgs) string {
 			if isLast {
 				flushWord("")
 			}
-		case runeSpace:
+		case runeSpace, runeSymbol:
 			flushWord(string(r))
-		case runeSymbol:
-			flushWord(string(r))
-		default:
+		case runeOther:
 			out.WriteRune(r)
 		}
 	}
