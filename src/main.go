@@ -8,66 +8,102 @@ import (
 	"textTamer/lib"
 )
 
-func setFlags() {
-	flag.Int("f", 50, "Percent of word to bold")
-	flag.String("t", "md", "Type of bold")
-	flag.Int("j", 0, "Jumps of word to bold")
-	flag.String("o", "", "Output file")
+type Config struct {
+	TypeBold   string
+	Percent    int
+	Jumps      int
+	OutputFile string
+	InputFile  string
+}
+
+func parseFlags() Config {
+	var cfg Config
+	flag.StringVar(&cfg.TypeBold, "t", "md", "Bold marker type: md | html | ansi")
+	flag.IntVar(&cfg.Percent, "f", 0, "Bold percent (0 = bionic curve mode, 1-100 = flat percent)")
+	flag.IntVar(&cfg.Jumps, "j", 0, "Number of words to skip between bolded words")
+	flag.StringVar(&cfg.OutputFile, "o", "", "Output file (default: stdout)")
 	flag.Parse()
+	if args := flag.Args(); len(args) > 0 {
+		cfg.InputFile = args[0]
+	}
+	return cfg
 }
 
-func saveInFile(name string, content string) {
-	file, err := os.Create(name)
-	if err != nil {
-		panic(err)
+func validate(cfg Config) error {
+	switch cfg.TypeBold {
+	case "md", "html", "ansi":
+	default:
+		return fmt.Errorf("invalid -t %q (must be md, html, or ansi)", cfg.TypeBold)
 	}
-	defer file.Close()
-	file.WriteString(content)
+	if cfg.Percent < 0 || cfg.Percent > 100 {
+		return fmt.Errorf("invalid -f %d (must be 0..100)", cfg.Percent)
+	}
+	if cfg.Jumps < 0 {
+		return fmt.Errorf("invalid -j %d (must be >= 0)", cfg.Jumps)
+	}
+	return nil
 }
 
-func readInFile(name string) string {
-	file, err := os.Open(name)
-	if err != nil {
-		panic(err)
+func readAll(cfg Config) (string, error) {
+	var src *os.File
+	if cfg.InputFile != "" {
+		f, err := os.Open(cfg.InputFile)
+		if err != nil {
+			return "", err
+		}
+		defer f.Close()
+		src = f
+	} else {
+		src = os.Stdin
 	}
-	defer file.Close()
-	scanner := bufio.NewScanner(file)
+
+	scanner := bufio.NewScanner(src)
 	var content string
 	for scanner.Scan() {
 		content += scanner.Text() + "\n"
 	}
-	return content
+	return content, scanner.Err()
 }
 
-func getTextInput() string {
-	var content string
-	nonFlagArgs := flag.Args()
-
-	if len(nonFlagArgs) == 0 {
-		scanner := bufio.NewScanner(os.Stdin)
-		for scanner.Scan() {
-			content += scanner.Text()
-		}
-		fmt.Println(content)
-		return content
-	} else {
-		content = readInFile(nonFlagArgs[0])
-		return content
+func writeAll(cfg Config, content string) error {
+	if cfg.OutputFile == "" {
+		fmt.Print(content)
+		return nil
 	}
+	f, err := os.Create(cfg.OutputFile)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+	_, err = f.WriteString(content)
+	return err
+}
+
+func die(err error) {
+	fmt.Fprintln(os.Stderr, err)
+	os.Exit(1)
 }
 
 func main() {
-	setFlags()
-	stdinWord := getTextInput()
-	args := lib.BoldArgs{
-		TypeBold: flag.Lookup("t").Value.(flag.Getter).Get().(string),
-		Percent:  flag.Lookup("f").Value.(flag.Getter).Get().(int),
-		Jumps:    flag.Lookup("j").Value.(flag.Getter).Get().(int),
+	cfg := parseFlags()
+	if err := validate(cfg); err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		flag.Usage()
+		os.Exit(2)
 	}
-	content := lib.MakeTextToBold(stdinWord, args)
-	if flag.Lookup("o").Value.(flag.Getter).Get().(string) != "" {
-		saveInFile(flag.Lookup("o").Value.(flag.Getter).Get().(string), content)
-	} else {
-		print(content)
+
+	input, err := readAll(cfg)
+	if err != nil {
+		die(err)
+	}
+
+	content := lib.MakeTextToBold(input, lib.BoldArgs{
+		TypeBold: cfg.TypeBold,
+		Percent:  cfg.Percent,
+		Jumps:    cfg.Jumps,
+	})
+
+	if err := writeAll(cfg, content); err != nil {
+		die(err)
 	}
 }
