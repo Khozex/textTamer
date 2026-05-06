@@ -5,11 +5,14 @@ import (
 	"unicode"
 )
 
-type Caracter struct {
-	char         string
-	typeChar     string
-	identiFyRune int
-}
+type runeKind int
+
+const (
+	runeLetter runeKind = iota
+	runeSpace
+	runeSymbol
+	runeOther
+)
 
 type BoldArgs struct {
 	TypeBold string
@@ -17,88 +20,78 @@ type BoldArgs struct {
 	Jumps    int
 }
 
-func categorizeRune(r rune) string {
+func classify(r rune) runeKind {
 	switch {
 	case unicode.IsLetter(r):
-		return "string"
-	case unicode.IsDigit(r):
-		return "number"
+		return runeLetter
 	case unicode.IsSpace(r):
-		return "space"
+		return runeSpace
+	case unicode.IsDigit(r):
+		return runeOther
 	default:
-		return "symbol"
+		return runeSymbol
 	}
 }
 
-func parseWordToBold(text string, boldArgs BoldArgs) string {
+func parseWordToBold(text string, args BoldArgs) string {
 	runes := []rune(text)
 	wordLength := len(runes)
 
-	if boldArgs.Percent < 50 {
-		boldArgs.Percent = 50
+	percent := args.Percent
+	if percent < 50 {
+		percent = 50
 	}
+	boldCount := int(float64(wordLength)*(float64(percent)/100.0) + 0.5)
 
-	halfWordLength := int(float64(wordLength)*(float64(boldArgs.Percent)/100.0) + 0.5)
+	boldPortion := string(runes[:boldCount])
+	remainder := string(runes[boldCount:])
 
-	boldPortion := string(runes[:halfWordLength])
-	remainder := string(runes[halfWordLength:])
-
-	if boldArgs.TypeBold == "html" {
+	if args.TypeBold == "html" {
 		return "<b>" + boldPortion + "</b>" + remainder
 	}
 	return "**" + boldPortion + "**" + remainder
 }
 
-func identifyRuneByType(runeChar rune) Caracter {
-	var runeWithIdentify Caracter
-	runeWithIdentify.char = string(rune(runeChar))
-	runeWithIdentify.identiFyRune = int(runeChar)
-	runeWithIdentify.typeChar = categorizeRune(runeChar)
-	return runeWithIdentify
-}
-
 func MakeTextToBold(text string, args BoldArgs) string {
 	runes := []rune(text)
-	var words []string
-	var word string
-	var runeCount int
+	var out strings.Builder
+	out.Grow(len(text) + len(text)/4)
+
+	var word strings.Builder
 	jumpCount := args.Jumps
-	for _, runeChar := range runes {
-		runeCount++
-		runeIdentify := identifyRuneByType(runeChar)
-		if runeIdentify.typeChar == "string" {
-			word += runeIdentify.char
-			if runeCount == len(runes) {
-				if jumpCount == args.Jumps {
-					words = append(words, parseWordToBold(word, args))
-					jumpCount = 0
-				} else {
-					words = append(words, word)
-					jumpCount++
-				}
-			}
-		} else if runeIdentify.typeChar == "space" && word != "" {
-			if jumpCount == args.Jumps {
-				words = append(words, parseWordToBold(word, args))
-				jumpCount = 0
-			} else {
-				words = append(words, word)
-				jumpCount++
-			}
-			words = append(words, runeIdentify.char)
-			word = ""
-		} else if runeIdentify.typeChar == "symbol" && word != "" {
-			if jumpCount == args.Jumps {
-				words = append(words, parseWordToBold(word, args)+runeIdentify.char)
-				jumpCount = 0
-			} else {
-				words = append(words, word+runeIdentify.char)
-				jumpCount++
-			}
-			word = ""
+
+	flushWord := func(trailing string) {
+		if word.Len() == 0 {
+			out.WriteString(trailing)
+			return
+		}
+		w := word.String()
+		if jumpCount == args.Jumps {
+			out.WriteString(parseWordToBold(w, args))
+			jumpCount = 0
 		} else {
-			words = append(words, runeIdentify.char)
+			out.WriteString(w)
+			jumpCount++
+		}
+		out.WriteString(trailing)
+		word.Reset()
+	}
+
+	for i, r := range runes {
+		isLast := i == len(runes)-1
+		switch classify(r) {
+		case runeLetter:
+			word.WriteRune(r)
+			if isLast {
+				flushWord("")
+			}
+		case runeSpace:
+			flushWord(string(r))
+		case runeSymbol:
+			flushWord(string(r))
+		default:
+			out.WriteRune(r)
 		}
 	}
-	return strings.Join(words, "")
+	return out.String()
 }
