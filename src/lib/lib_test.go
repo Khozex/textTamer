@@ -174,3 +174,43 @@ func TestBionicCurveSkipsSingleLetterWord(t *testing.T) {
 	// I(1)→0, am(2)→1, here(4)→2
 	assert.Equal(t, "I **a**m **he**re", out)
 }
+
+func TestUnicodeWords(t *testing.T) {
+	args := BoldArgs{TypeBold: "md", Percent: 0, Jumps: 0}
+	out := MakeTextToBold("café não está aqui", args)
+	// café(4)→2, não(3)→1, está(4)→2, aqui(4)→2
+	assert.Equal(t, "**ca**fé **n**ão **es**tá **aq**ui", out)
+}
+
+func TestEdgeCaseEmpty(t *testing.T) {
+	args := BoldArgs{TypeBold: "md", Percent: 50, Jumps: 0}
+	assert.Equal(t, "", MakeTextToBold("", args))
+}
+
+func TestEdgeCaseWhitespaceOnly(t *testing.T) {
+	args := BoldArgs{TypeBold: "md", Percent: 50, Jumps: 0}
+	assert.Equal(t, "   \t  ", MakeTextToBold("   \t  ", args))
+}
+
+func TestEdgeCasePunctuationOnly(t *testing.T) {
+	args := BoldArgs{TypeBold: "md", Percent: 50, Jumps: 0}
+	assert.Equal(t, "...!?,;", MakeTextToBold("...!?,;", args))
+}
+
+func TestEdgeCasePreservesEmbeddedNewlines(t *testing.T) {
+	args := BoldArgs{TypeBold: "md", Percent: 50, Jumps: 0}
+	out := MakeTextToBold("hi\nthere", args)
+	// "hi" len 2 Percent 50 → int(1+0.5) = 1 → "**h**i"
+	// "there" len 5 Percent 50 → int(2.5+0.5) = 3 → "**the**re"
+	assert.Equal(t, "**h**i\n**the**re", out)
+}
+
+func TestEdgeCaseDigitsAsWordBoundary(t *testing.T) {
+	args := BoldArgs{TypeBold: "md", Percent: 0, Jumps: 0}
+	// "covid19" with curve: "covid"(5)→3 bold, "19" digits act as boundary (no markers)
+	assert.Equal(t, "**cov**id19", MakeTextToBold("covid19", args))
+	// "abc1" used to lose the "abc" entirely; should now emit "abc" bolded then "1"
+	assert.Equal(t, "**a**bc1", MakeTextToBold("abc1", args))
+	// Standalone digits: "5 apples" → "5"(1)→0 bold, then "apples"(6)→3 bold
+	assert.Equal(t, "5 **app**les", MakeTextToBold("5 apples", args))
+}

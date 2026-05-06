@@ -11,7 +11,6 @@ const (
 	runeLetter runeKind = iota
 	runeSpace
 	runeSymbol
-	runeOther
 )
 
 type BoldArgs struct {
@@ -26,8 +25,6 @@ func classify(r rune) runeKind {
 		return runeLetter
 	case unicode.IsSpace(r):
 		return runeSpace
-	case unicode.IsDigit(r):
-		return runeOther
 	default:
 		return runeSymbol
 	}
@@ -113,8 +110,6 @@ func MakeTextToBold(text string, args BoldArgs) string {
 			}
 		case runeSpace, runeSymbol:
 			flushWord(string(r))
-		case runeOther:
-			out.WriteRune(r)
 		}
 	}
 	return out.String()
