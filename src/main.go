@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"flag"
 	"fmt"
+	"io"
 	"os"
 	"textTamer/lib"
 )
@@ -44,44 +45,43 @@ func validate(cfg Config) error {
 	return nil
 }
 
-func readAll(cfg Config) (string, error) {
-	var src *os.File
-	if cfg.InputFile != "" {
-		f, err := os.Open(cfg.InputFile)
-		if err != nil {
-			return "", err
-		}
-		defer f.Close()
-		src = f
-	} else {
-		src = os.Stdin
-	}
-
-	scanner := bufio.NewScanner(src)
-	var content string
-	for scanner.Scan() {
-		content += scanner.Text() + "\n"
-	}
-	return content, scanner.Err()
-}
-
-func writeAll(cfg Config, content string) error {
-	if cfg.OutputFile == "" {
-		fmt.Print(content)
-		return nil
-	}
-	f, err := os.Create(cfg.OutputFile)
-	if err != nil {
-		return err
-	}
-	defer f.Close()
-	_, err = f.WriteString(content)
-	return err
-}
-
 func die(err error) {
 	fmt.Fprintln(os.Stderr, err)
 	os.Exit(1)
+}
+
+func openInput(cfg Config) (io.ReadCloser, error) {
+	if cfg.InputFile == "" {
+		return io.NopCloser(os.Stdin), nil
+	}
+	return os.Open(cfg.InputFile)
+}
+
+func openOutput(cfg Config) (io.WriteCloser, error) {
+	if cfg.OutputFile == "" {
+		return nopWriteCloser{os.Stdout}, nil
+	}
+	return os.Create(cfg.OutputFile)
+}
+
+type nopWriteCloser struct{ io.Writer }
+
+func (nopWriteCloser) Close() error { return nil }
+
+func processStream(r io.Reader, w io.Writer, args lib.BoldArgs) error {
+	scanner := bufio.NewScanner(r)
+	scanner.Buffer(make([]byte, 1024*1024), 10*1024*1024)
+	bw := bufio.NewWriter(w)
+	for scanner.Scan() {
+		line := lib.MakeTextToBold(scanner.Text(), args)
+		if _, err := fmt.Fprintln(bw, line); err != nil {
+			return err
+		}
+	}
+	if err := scanner.Err(); err != nil {
+		return err
+	}
+	return bw.Flush()
 }
 
 func main() {
@@ -92,18 +92,27 @@ func main() {
 		os.Exit(2)
 	}
 
-	input, err := readAll(cfg)
+	in, err := openInput(cfg)
+	if err != nil {
+		die(err)
+	}
+	defer in.Close()
+
+	out, err := openOutput(cfg)
 	if err != nil {
 		die(err)
 	}
 
-	content := lib.MakeTextToBold(input, lib.BoldArgs{
+	args := lib.BoldArgs{
 		TypeBold: cfg.TypeBold,
 		Percent:  cfg.Percent,
 		Jumps:    cfg.Jumps,
-	})
-
-	if err := writeAll(cfg, content); err != nil {
+	}
+	if err := processStream(in, out, args); err != nil {
+		out.Close()
+		die(err)
+	}
+	if err := out.Close(); err != nil {
 		die(err)
 	}
 }
