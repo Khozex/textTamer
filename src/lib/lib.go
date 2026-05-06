@@ -46,10 +46,14 @@ func parseWordToBold(text string, args BoldArgs) string {
 	boldPortion := string(runes[:boldCount])
 	remainder := string(runes[boldCount:])
 
-	if args.TypeBold == "html" {
+	switch args.TypeBold {
+	case "html":
 		return "<b>" + boldPortion + "</b>" + remainder
+	case "ansi":
+		return "\x1b[1m" + boldPortion + "\x1b[0m" + remainder
+	default:
+		return "**" + boldPortion + "**" + remainder
 	}
-	return "**" + boldPortion + "**" + remainder
 }
 
 func MakeTextToBold(text string, args BoldArgs) string {

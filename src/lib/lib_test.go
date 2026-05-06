@@ -123,3 +123,14 @@ func TestShouldBoldFiftyPercentWithJumpWords(t *testing.T) {
 	boldWord := MakeTextToBold(word, args)
 	assert.Equal(t, boldWord, "**Th**e sun **ris**es in **th**e east.")
 }
+
+func TestShouldBoldFiftyPercentOfWordInANSI(t *testing.T) {
+	word := "The sun rises in the east"
+	args := BoldArgs{
+		TypeBold: "ansi",
+		Percent:  50,
+		Jumps:    0,
+	}
+	boldWord := MakeTextToBold(word, args)
+	assert.Equal(t, "\x1b[1mTh\x1b[0me \x1b[1msu\x1b[0mn \x1b[1mris\x1b[0mes \x1b[1mi\x1b[0mn \x1b[1mth\x1b[0me \x1b[1mea\x1b[0mst", boldWord)
+}
