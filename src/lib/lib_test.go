@@ -134,3 +134,43 @@ func TestShouldBoldFiftyPercentOfWordInANSI(t *testing.T) {
 	boldWord := MakeTextToBold(word, args)
 	assert.Equal(t, "\x1b[1mTh\x1b[0me \x1b[1msu\x1b[0mn \x1b[1mris\x1b[0mes \x1b[1mi\x1b[0mn \x1b[1mth\x1b[0me \x1b[1mea\x1b[0mst", boldWord)
 }
+
+func TestBionicCurveByLength(t *testing.T) {
+	cases := []struct {
+		input    string
+		expected string
+	}{
+		{"I", "I"},                               // len 1 → no bold
+		{"to", "**t**o"},                         // len 2 → 1
+		{"sun", "**s**un"},                       // len 3 → 1
+		{"east", "**ea**st"},                     // len 4 → 2
+		{"rises", "**ris**es"},                   // len 5 → 3
+		{"bright", "**bri**ght"},                 // len 6 → 3
+		{"morning", "**morn**ing"},               // len 7 → 4
+		{"shadowed", "**shad**owed"},             // len 8 → 4
+		{"announces", "**anno**unces"},           // len 9 → 4
+		{"illuminate", "**illu**minate"},         // len 10 → int(4.5) = 4
+		{"transformation", "**transf**ormation"}, // len 14 → round(5.6) = 6
+	}
+	args := BoldArgs{TypeBold: "md", Percent: 0, Jumps: 0}
+	for _, tc := range cases {
+		out := MakeTextToBold(tc.input, args)
+		assert.Equal(t, tc.expected, out, "input: %q", tc.input)
+	}
+}
+
+func TestBionicCurveOnSentence(t *testing.T) {
+	input := "The sun rises in the east."
+	args := BoldArgs{TypeBold: "md", Percent: 0, Jumps: 0}
+	out := MakeTextToBold(input, args)
+	// The(3)→1, sun(3)→1, rises(5)→3, in(2)→1, the(3)→1, east(4)→2
+	assert.Equal(t, "**T**he **s**un **ris**es **i**n **t**he **ea**st.", out)
+}
+
+func TestBionicCurveSkipsSingleLetterWord(t *testing.T) {
+	input := "I am here"
+	args := BoldArgs{TypeBold: "md", Percent: 0, Jumps: 0}
+	out := MakeTextToBold(input, args)
+	// I(1)→0, am(2)→1, here(4)→2
+	assert.Equal(t, "I **a**m **he**re", out)
+}

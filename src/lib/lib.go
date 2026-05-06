@@ -33,15 +33,37 @@ func classify(r rune) runeKind {
 	}
 }
 
+func bionicBoldCount(wordLen int) int {
+	switch {
+	case wordLen <= 1:
+		return 0
+	case wordLen <= 3:
+		return 1
+	case wordLen == 4:
+		return 2
+	case wordLen <= 6:
+		return 3
+	case wordLen <= 9:
+		return 4
+	default:
+		return int(float64(wordLen)*0.4 + 0.5)
+	}
+}
+
 func parseWordToBold(text string, args BoldArgs) string {
 	runes := []rune(text)
 	wordLength := len(runes)
 
-	percent := args.Percent
-	if percent < 50 {
-		percent = 50
+	var boldCount int
+	if args.Percent == 0 {
+		boldCount = bionicBoldCount(wordLength)
+	} else {
+		boldCount = int(float64(wordLength)*(float64(args.Percent)/100.0) + 0.5)
 	}
-	boldCount := int(float64(wordLength)*(float64(percent)/100.0) + 0.5)
+
+	if boldCount == 0 {
+		return text
+	}
 
 	boldPortion := string(runes[:boldCount])
 	remainder := string(runes[boldCount:])
